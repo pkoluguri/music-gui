@@ -16,6 +16,7 @@ length = 0
 stopped = False
 downloaded_var = False
 title = ""
+tries = 0
 
 def command(comm):
     stopbtn.configure(command=stop)
@@ -61,11 +62,13 @@ def playing():
       time.sleep(1)
   time.sleep(1)
   status_var.set("press play to play the song!")
+  playbtn.configure(command=play)
 
 def play():
   global stopped
   global downloaded_var
   stopped = False
+  playbtn.configure(command=ap)
   t = threading.Thread(target=get,args=[E1.get()]) 
   t.start()
 
@@ -73,6 +76,7 @@ def play():
 def stop():
    global stopped
    print("stopping..")
+   playbtn.configure(command=play)
    playbtn.configure(bg="white")
    process = subprocess.Popen(['killall','afplay'], 
                            stdout=subprocess.PIPE,
@@ -100,6 +104,7 @@ def downloading():
 
 def get(search_query):
  global downloaded_var
+ global tries
  downloaded = False
  playbtn.configure(bg="grey")
  while not downloaded:
@@ -114,7 +119,7 @@ def get(search_query):
       return
     t=threading.Thread(target=downloading)
     t.start()
-    t = yt.streams.filter().all()
+    t = yt.streams.filter(only_audio=True).all()
     t[0].download(filename="video")
     length = yt.length
     title = yt.title
@@ -124,8 +129,13 @@ def get(search_query):
     t3 = threading.Thread(target=playing)
     t3.start()
     return True
+  except requests.exceptions.ConnectionError:
+     tkinter.messagebox.showerror("Connection error!","please connect to internet to listen to music")
+     playbtn.configure(command=play)
+     break
   except urllib.error.HTTPError:
     continue
+    
 
 window = tkinter.Tk()
 window.title("saavn(remake)")
